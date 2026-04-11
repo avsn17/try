@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroBuddy — Cognitive Learning Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080c12;
+  --bg2: #0d1220;
+  --surface: #111827;
+  --surface2: #1a2333;
+  --surface3: #1f2d42;
+  --border: #1e3050;
+  --border2: #253d5e;
+  --cyan: #00d4ff;
+  --cyan-dim: #0099bb;
+  --green: #00ff9d;
+  --green-dim: #00bb73;
+  --amber: #ffb347;
+  --red: #ff4d6d;
+  --purple: #b06aff;
+  --text: #e8f4ff;
+  --text-muted: #6b8aaa;
+  --text-dim: #3d5a7a;
+  --glow: 0 0 20px rgba(0,212,255,0.15);
+  --glow-green: 0 0 20px rgba(0,255,157,0.15);
+  --font-mono: 'Space Mono', monospace;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* neural bg animation */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 15% 30%, rgba(0,212,255,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 70%, rgba(176,106,255,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 10%, rgba(0,255,157,0.03) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── NEURAL CANVAS ── */
+#neuralCanvas {
+  position: fixed;
+  inset: 0;
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── LAYOUT ── */
+.app { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── TOPBAR ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8,12,18,0.9);
+  backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.logo {
+  display: flex; align-items: center; gap: 14px;
+}
+
+.logo-mark {
+  width: 40px; height: 40px;
+  border: 1.5px solid var(--cyan);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  box-shadow: var(--glow), inset 0 0 12px rgba(0,212,255,0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.logo-mark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0,212,255,0.1), transparent);
+}
+
+.logo-info h1 {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: -0.5px;
+}
+
+.logo-info p {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 300;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+.topbar-right {
+  display: flex; align-items: center; gap: 12px;
+}
+
+.status-dot {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.nav-tabs {
+  display: flex; gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.ntab {
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+
+.ntab:hover { color: var(--text); background: var(--surface2); }
+.ntab.active { background: var(--surface3); color: var(--cyan); border: 1px solid var(--border2); }
+
+/* ── MAIN GRID ── */
+.main-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr 260px;
+  gap: 0;
+  max-height: calc(100vh - 73px);
+  overflow: hidden;
+}
+
+/* ── PANELS ── */
+.panel {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel:last-child { border-right: none; border-left: 1px solid var(--border); }
+
+.panel-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-title {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  display: flex; align-items: center; gap: 7px;
+}
+
+.panel-title::before {
+  content: '';
+  width: 3px; height: 12px;
+  background: var(--cyan);
+  border-radius: 2px;
+  box-shadow: 0 0 6px var(--cyan);
+}
+
+.panel-body { flex: 1; overflow-y: auto; padding: 14px; scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+.panel-body::-webkit-scrollbar { width: 3px; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--border2); }
+
+/* ── LEFT PANEL: COGNITIVE PROFILE ── */
+.profile-section { margin-bottom: 20px; }
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+}
+
+/* BRAIN TYPE BADGE */
+.brain-badge {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.brain-badge::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+}
+
+.brain-type-name {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: -0.5px;
+}
+
+.brain-type-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 300;
+  margin-top: 3px;
+  font-style: italic;
+}
+
+.brain-type-desc {
+  font-size: 0.78rem;
+  color: var(--text);
+  line-height: 1.5;
+  margin-top: 10px;
+  font-weight: 300;
+}
+
+/* TRAIT BARS */
+.trait-bar-wrap {
+  margin-bottom: 10px;
+}
+
+.trait-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.trait-name {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.trait-val {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--cyan);
+}
+
+.trait-track {
+  height: 4px;
+  background: var(--surface3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.trait-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* NEUROTRANSMITTER PANEL */
+.neuro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.neuro-chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.neuro-chip-name {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.neuro-chip-val {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+.neuro-chip-label {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+
+.neuro-mini-bar {
+  height: 2px;
+  border-radius: 1px;
+  margin-top: 7px;
+  background: var(--surface3);
+  overflow: hidden;
+}
+
+.neuro-mini-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 1.5s ease;
+}
+
+/* LEARNING MODE */
+.learning-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lmode {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lmode:hover, .lmode.active {
+  border-color: var(--cyan-dim);
+  background: var(--surface3);
+}
+
+.lmode.active .lmode-dot { box-shadow: 0 0 8px currentColor; }
+
+.lmode-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.lmode-info { flex: 1; }
+
+.lmode-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.lmode-sub {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+.lmode-badge {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+/* ── CENTER: CHAT ── */
+.chat-center {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.session-info {
+  display: flex;
+  gap: 16px;
+}
+
+.sess-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sess-label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.sess-val {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.sess-val.green { color: var(--green); }
+.sess-val.cyan { color: var(--cyan); }
+.sess-val.amber { color: var(--amber); }
+
+.focus-mode-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  background: var(--surface2);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.focus-mode-btn:hover { color: var(--cyan); border-color: var(--cyan-dim); }
+
+/* MESSAGES */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.chat-messages::-webkit-scrollbar { width: 3px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+.msg-row {
+  display: flex;
+  gap: 12px;
+  animation: fadeUp 0.4s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.msg-row.user { flex-direction: row-reverse; }
+
+.msg-avatar {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.msg-avatar.ai {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--cyan);
+  box-shadow: var(--glow);
+}
+
+.msg-avatar.human {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.msg-content { max-width: 72%; }
+
+.msg-meta {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 5px;
+}
+
+.msg-row.user .msg-meta { flex-direction: row-reverse; }
+
+.msg-name {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.msg-tag {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.bubble {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  font-weight: 400;
+}
+
+.bubble.ai-b {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-top-left-radius: 3px;
+}
+
+.bubble.ai-b::selection, .bubble.ai-b *::selection { background: rgba(0,212,255,0.2); }
+
+.bubble.user-b {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-top-right-radius: 3px;
+}
+
+/* formatted content inside AI bubble */
+.bubble.ai-b strong { color: var(--cyan); font-weight: 600; }
+.bubble.ai-b em { color: var(--text-muted); font-style: italic; }
+.bubble.ai-b .sci-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0,212,255,0.08);
+  border: 1px solid rgba(0,212,255,0.2);
+  color: var(--cyan);
+  margin: 0 3px;
+}
+.bubble.ai-b .green-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0,255,157,0.08);
+  border: 1px solid rgba(0,255,157,0.2);
+  color: var(--green);
+  margin: 0 3px;
+}
+.bubble.ai-b ul { padding-left: 16px; margin: 6px 0; }
+.bubble.ai-b li { margin-bottom: 4px; color: var(--text); }
+.bubble.ai-b .ref {
+  display: block;
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* TYPING */
+.typing-indicator {
+  display: flex; gap: 4px; align-items: center; padding: 4px 2px;
+}
+.ti { width: 5px; height: 5px; border-radius: 50%; background: var(--cyan); animation: ti 1.2s infinite; }
+.ti:nth-child(2) { animation-delay: 0.2s; }
+.ti:nth-child(3) { animation-delay: 0.4s; }
+@keyframes ti {
+  0%,60%,100% { opacity: 0.2; transform: scale(0.8); }
+  30% { opacity: 1; transform: scale(1.2); }
+}
+
+/* QUERY CHIPS */
+.query-chips {
+  padding: 10px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: rgba(8,12,18,0.5);
+}
+
+.qchip {
+  padding: 6px 13px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.qchip:hover {
+  border-color: var(--cyan-dim);
+  color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+}
+
+/* INPUT */
+.chat-input-area {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  transition: border-color 0.2s;
+}
+
+.input-row:focus-within { border-color: var(--cyan-dim); box-shadow: 0 0 0 2px rgba(0,212,255,0.08); }
+
+#userInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text);
+  resize: none;
+  max-height: 120px;
+  line-height: 1.55;
+  padding: 2px 0;
+}
+
+#userInput::placeholder { color: var(--text-dim); font-style: italic; }
+
+.send-btn {
+  width: 36px; height: 36px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--cyan);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  font-family: var(--font-mono);
+}
+
+.send-btn:hover { background: rgba(0,212,255,0.1); border-color: var(--cyan); box-shadow: var(--glow); }
+.send-btn:active { transform: scale(0.93); }
+
+/* API key notice */
+.api-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(255,179,71,0.07);
+  border: 1px solid rgba(255,179,71,0.25);
+  border-radius: 10px;
+  padding: 11px 14px;
+  margin-bottom: 12px;
+  font-size: 0.78rem;
+  color: #c89050;
+}
+
+.api-key-row {
+  display: flex; gap: 7px; margin-top: 7px;
+}
+
+.api-key-row input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid rgba(255,179,71,0.3);
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--amber);
+  outline: none;
+}
+
+.api-key-row button {
+  padding: 6px 13px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,179,71,0.4);
+  background: rgba(255,179,71,0.1);
+  color: var(--amber);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.api-key-row button:hover { background: rgba(255,179,71,0.2); }
+
+/* ── RIGHT PANEL: INSIGHTS ── */
+.insights-panel { display: flex; flex-direction: column; gap: 14px; padding: 14px; }
+
+/* COGNITIVE LOAD METER */
+.load-meter {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.load-title {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.load-gauge {
+  position: relative;
+  height: 7px;
+  background: var(--surface3);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 7px;
+}
+
+.load-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--green), var(--cyan), var(--amber));
+  transition: width 0.8s ease;
+}
+
+.load-zones {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-dim);
+}
+
+/* STUDY WINDOWS */
+.window-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.window-slot {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.window-slot:last-child { border-bottom: none; }
+
+.wslot-time {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--cyan);
+  min-width: 64px;
+  padding-top: 1px;
+}
+
+.wslot-info { flex: 1; }
+
+.wslot-subject {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.wslot-type {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 300;
+  margin-top: 1px;
+}
+
+.wslot-bar {
+  height: 3px;
+  border-radius: 2px;
+  margin-top: 6px;
+  transition: width 1s ease;
+}
+
+/* CORTISOL ALERT */
+.alert-card {
+  background: rgba(255,77,109,0.06);
+  border: 1px solid rgba(255,77,109,0.2);
+  border-radius: 10px;
+  padding: 11px 13px;
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: 0.76rem;
+  color: #cc7080;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.alert-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* BREAKTHROUGH INSIGHT */
+.insight-box {
+  background: rgba(0,212,255,0.04);
+  border: 1px solid rgba(0,212,255,0.15);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-weight: 300;
+  font-style: italic;
+  position: relative;
+  overflow: hidden;
+}
+
+.insight-box::before {
+  content: '"';
+  position: absolute;
+  top: -5px; left: 8px;
+  font-size: 3rem;
+  color: rgba(0,212,255,0.1);
+  font-family: Georgia, serif;
+  line-height: 1;
+}
+
+.insight-author {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  margin-top: 8px;
+  display: block;
+}
+
+/* TASKS */
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.task-row:last-child { border-bottom: none; }
+
+.task-check {
+  width: 16px; height: 16px;
+  border: 1.5px solid var(--border2);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  font-size: 0.6rem;
+}
+
+.task-check.done { background: var(--green); border-color: var(--green); color: var(--bg); }
+
+.task-text {
+  flex: 1;
+  font-size: 0.78rem;
+  color: var(--text);
+  font-weight: 400;
+}
+
+.task-text.done { text-decoration: line-through; color: var(--text-dim); }
+
+.task-pri {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ADD TASK */
+.add-task-row {
+  display: flex;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.add-task-row input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.add-task-row input:focus { border-color: var(--cyan-dim); }
+.add-task-row input::placeholder { color: var(--text-dim); }
+
+.add-task-row button {
+  width: 30px; height: 30px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  color: var(--cyan);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.add-task-row button:hover { background: rgba(0,212,255,0.1); border-color: var(--cyan-dim); }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .panel:first-child, .panel:last-child { display: none; }
+}
+
+/* ONBOARDING OVERLAY */
+#onboarding {
+  position: fixed;
+  inset: 0;
+  background: rgba(8,12,18,0.97);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.onboard-box {
+  width: 100%;
+  max-width: 640px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.onboard-header {
+  padding: 28px 32px 20px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+.onboard-header .step-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.onboard-header h2 {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  color: var(--text);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.onboard-header p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.onboard-body { padding: 24px 32px 28px; }
+
+.question-text {
+  font-size: 0.9rem;
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.question-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 300;
+  margin-bottom: 16px;
+  font-style: italic;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-bottom: 20px;
+}
+
+.option-btn {
+  padding: 13px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 400;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  line-height: 1.4;
+}
+
+.option-btn:hover { border-color: var(--cyan-dim); background: var(--surface3); }
+.option-btn.selected { border-color: var(--cyan); background: rgba(0,212,255,0.08); color: var(--cyan); }
+
+.option-btn .opt-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  display: block;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.option-btn.selected .opt-label { color: var(--cyan-dim); }
+
+.onboard-progress {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.op-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--surface3);
+  transition: all 0.3s;
+}
+
+.op-dot.active { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); width: 18px; border-radius: 3px; }
+.op-dot.done { background: var(--green); }
+
+.next-btn {
+  width: 100%;
+  padding: 13px;
+  background: rgba(0,212,255,0.1);
+  border: 1px solid var(--cyan-dim);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.next-btn:hover { background: rgba(0,212,255,0.18); }
+.next-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* RESULT SCREEN */
+.result-screen { padding: 28px 32px; text-align: center; }
+
+.result-type {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+
+.result-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 20px;
+}
+
+.result-traits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.result-trait {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+
+.rt-name {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 3px;
+}
+
+.rt-val {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.launch-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(176,106,255,0.15));
+  border: 1px solid var(--cyan-dim);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.launch-btn:hover { background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(176,106,255,0.25)); }
+
+/* scanning animation on result */
+.scan-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  animation: scan 2.5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes scan {
+  from { top: 0; opacity: 0.6; }
+  50% { opacity: 1; }
+  to { top: 100%; opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- NEURAL CANVAS -->
+<canvas id="neuralCanvas"></canvas>
+
+<!-- ONBOARDING -->
+<div id="onboarding">
+  <div class="onboard-box" style="position:relative;overflow:visible;">
+    <div id="onboardContent"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app">
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-mark">🧠</div>
+      <div class="logo-info">
+        <h1>NeuroBuddy</h1>
+        <p>Cognitive Learning Intelligence</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-dot">
+        <div class="dot"></div>
+        <span id="sessionTimer">00:00:00</span>
+      </div>
+      <div class="nav-tabs">
+        <button class="ntab active" onclick="setView('learn')">LEARN</button>
+        <button class="ntab" onclick="setView('tasks')">TASKS</button>
+        <button class="ntab" onclick="setView('profile')">PROFILE</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <!-- LEFT: COGNITIVE PROFILE -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Cognitive Profile</div>
+        <span style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);" id="profileVersion">v0.1</span>
+      </div>
+      <div class="panel-body">
+        <div class="profile-section">
+          <div class="section-label">Brain Archetype</div>
+          <div class="brain-badge">
+            <div class="brain-type-name" id="brainTypeName">—</div>
+            <div class="brain-type-sub" id="brainTypeSub">Initializing profile…</div>
+            <div class="brain-type-desc" id="brainTypeDesc"></div>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="section-label">Cognitive Traits (Big-5 + Learning)</div>
+          <div id="traitBars"></div>
+        </div>
+
+        <div class="profile-section">
+          <div class="section-label">Neurotransmitter Dominance</div>
+          <div class="neuro-grid" id="neuroGrid"></div>
+        </div>
+
+        <div class="profile-section">
+          <div class="section-label">Learning Mode</div>
+          <div class="learning-modes" id="learningModes"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: CHAT -->
+    <div class="chat-center">
+      <div class="chat-header">
+        <div class="session-info">
+          <div class="sess-item">
+            <span class="sess-label">Focus Score</span>
+            <span class="sess-val green" id="focusScore">—</span>
+          </div>
+          <div class="sess-item">
+            <span class="sess-label">Study Mode</span>
+            <span class="sess-val cyan" id="studyModeLabel">—</span>
+          </div>
+          <div class="sess-item">
+            <span class="sess-label">Load Level</span>
+            <span class="sess-val amber" id="loadLabel">—</span>
+          </div>
+          <div class="sess-item">
+            <span class="sess-label">Retention Est.</span>
+            <span class="sess-val" id="retentionLabel" style="color:var(--purple)">—</span>
+          </div>
+        </div>
+        <button class="focus-mode-btn" onclick="toggleFocusMode()">⚡ Deep Focus</button>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="api-notice" id="apiNotice">
+          <span>⚠</span>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:0.7rem;margin-bottom:2px;color:var(--amber);">ANTHROPIC API KEY REQUIRED</div>
+            <div>Enter your API key to activate the AI engine.</div>
+            <div class="api-key-row">
+              <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" />
+              <button onclick="saveApiKey()">SAVE</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="query-chips" id="queryChips">
+        <button class="qchip" onclick="chipSend('Explain spaced repetition and build me a custom schedule')">spaced repetition schedule</button>
+        <button class="qchip" onclick="chipSend('What learning technique fits my cognitive profile?')">optimal technique for me</button>
+        <button class="qchip" onclick="chipSend('Quiz me using active recall on a subject of your choice')">active recall quiz</button>
+        <button class="qchip" onclick="chipSend('I feel cognitively fatigued — what should I do?')">cognitive fatigue protocol</button>
+        <button class="qchip" onclick="chipSend('Explain the neuroscience of why I forget things')">why I forget things</button>
+      </div>
+
+      <div class="chat-input-area">
+        <div class="input-row">
+          <textarea id="userInput" rows="1" placeholder="Ask NeuroBuddy — e.g. 'How does dopamine affect my focus?'" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" onclick="sendMessage()">▶</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: INSIGHTS -->
+    <div class="panel" style="border-left:1px solid var(--border);border-right:none;">
+      <div class="panel-header">
+        <div class="panel-title">Live Insights</div>
+      </div>
+      <div class="panel-body insights-panel">
+
+        <div class="window-card">
+          <div class="section-label" style="margin-bottom:10px;">Optimal Study Windows</div>
+          <div id="studyWindows"></div>
+        </div>
+
+        <div class="load-meter">
+          <div class="load-title">
+            <span>Cognitive Load</span>
+            <span id="loadPct" style="color:var(--cyan)">—</span>
+          </div>
+          <div class="load-gauge"><div class="load-fill" id="loadFill" style="width:0%"></div></div>
+          <div class="load-zones">
+            <span>UNDER</span>
+            <span>OPTIMAL</span>
+            <span>OVER</span>
+          </div>
+        </div>
+
+        <div class="window-card">
+          <div class="section-label" style="margin-bottom:10px;">Task Queue</div>
+          <div id="taskList"></div>
+          <div class="add-task-row">
+            <input type="text" id="taskInput" placeholder="Add task…" onkeydown="if(event.key==='Enter')addTask()" />
+            <button onclick="addTask()">+</button>
+          </div>
+        </div>
+
+        <div class="alert-card" id="cortisolAlert">
+          <span class="alert-icon">⚠</span>
+          <div>Complete your profile assessment to receive personalized cortisol-aware study timing.</div>
+        </div>
+
+        <div class="insight-box">
+          <span id="insightQuote">"The brain is not designed for thinking; it's designed for survival. Learning requires deliberate override."</span>
+          <span class="insight-author">— D. Willingham, Why Don't Students Like School?</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── NEURAL CANVAS ──
+(function() {
+  const canvas = document.getElementById('neuralCanvas');
+  const ctx = canvas.getContext('2d');
+  let nodes = [], W, H;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function initNodes() {
+    nodes = Array.from({length: 55}, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random()-.5)*.3, vy: (Math.random()-.5)*.3,
+      r: Math.random()*2.5+1
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    nodes.forEach(n => {
+      n.x += n.vx; n.y += n.vy;
+      if(n.x<0||n.x>W) n.vx*=-1;
+      if(n.y<0||n.y>H) n.vy*=-1;
+    });
+    for(let i=0;i<nodes.length;i++) {
+      for(let j=i+1;j<nodes.length;j++) {
+        const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<130) {
+          ctx.beginPath();
+          ctx.strokeStyle=`rgba(0,212,255,${0.12*(1-d/130)})`;
+          ctx.lineWidth=0.6;
+          ctx.moveTo(nodes[i].x,nodes[i].y);
+          ctx.lineTo(nodes[j].x,nodes[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(0,212,255,0.4)';
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+
+  resize(); initNodes(); draw();
+  window.addEventListener('resize', ()=>{ resize(); initNodes(); });
+})();
+
+// ── STATE ──
+let apiKey = localStorage.getItem('nb_api_key') || '';
+let profile = JSON.parse(localStorage.getItem('nb_profile') || 'null');
+let chatHistory = [];
+let tasks = JSON.parse(localStorage.getItem('nb_tasks') || '[]');
+let isLoading = false;
+let sessionStart = Date.now();
+let focusMode = false;
+
+// Onboarding questions — grounded in Big-5, VARK, chronobiology, and cognitive neuroscience
+const QUESTIONS = [
+  {
+    q: "When learning new material, which approach feels most natural?",
+    sub: "Relates to working memory preference and encoding strategy (Baddeley, 2003)",
+    opts: [
+      { label: "VISUAL", text: "Diagrams, mind maps, spatial layouts" },
+      { label: "VERBAL", text: "Reading, writing, internal narration" },
+      { label: "AUDITORY", text: "Talking through problems, podcasts, lectures" },
+      { label: "KINESTHETIC", text: "Practice problems, hands-on, trial and error" }
+    ]
+  },
+  {
+    q: "At what time of day does your concentration peak?",
+    sub: "Tied to circadian cortisol rhythm and prefrontal cortex alertness (Folkard, 1975)",
+    opts: [
+      { label: "EARLY BIRD", text: "6–10 AM — sharp and alert at dawn" },
+      { label: "MIDDAY", text: "10 AM–2 PM — peak performance mid-morning" },
+      { label: "AFTERNOON", text: "2–6 PM — afternoon cognitive surge" },
+      { label: "NIGHT OWL", text: "After 8 PM — flow state at night" }
+    ]
+  },
+  {
+    q: "How do you typically respond to a difficult, complex problem?",
+    sub: "Reflects executive function profile and stress response (Kahneman System 1 vs 2)",
+    opts: [
+      { label: "ANALYTICAL", text: "Break it into structured sub-steps methodically" },
+      { label: "INTUITIVE", text: "Step back, let insight emerge subconsciously" },
+      { label: "COLLABORATIVE", text: "Discuss with others to think out loud" },
+      { label: "AVOIDANT", text: "I struggle — tend to procrastinate under pressure" }
+    ]
+  },
+  {
+    q: "Which describes your working memory and attention best?",
+    sub: "Linked to dopaminergic regulation of prefrontal cortex (Arnsten, 2011)",
+    opts: [
+      { label: "DEEP", text: "Long sustained focus, hard to switch tasks" },
+      { label: "BROAD", text: "Notice many things at once, easily distracted" },
+      { label: "CYCLING", text: "Intense bursts then need complete breaks" },
+      { label: "SOCIAL", text: "Better focus with ambient noise or people" }
+    ]
+  },
+  {
+    q: "After intense studying, how do you recover best?",
+    sub: "Reflects autonomic nervous system regulation and default mode network (DMN) activation",
+    opts: [
+      { label: "PASSIVE", text: "Rest, sleep, nature walks — minimal stimulus" },
+      { label: "ACTIVE", text: "Exercise, physical movement recharges me" },
+      { label: "CREATIVE", text: "Music, drawing, switching to creative tasks" },
+      { label: "SOCIAL", text: "Conversation and connection restores me" }
+    ]
+  },
+  {
+    q: "How do you relate to long-term goals and delayed rewards?",
+    sub: "Measures temporal discounting and striatal dopamine dynamics (Schultz, 1997)",
+    opts: [
+      { label: "FUTURE", text: "I'm highly motivated by long-term outcomes" },
+      { label: "PRESENT", text: "I need immediate rewards and quick wins" },
+      { label: "MIXED", text: "Both — I use milestones to bridge them" },
+      { label: "PURPOSE", text: "Meaning matters more than outcomes to me" }
+    ]
+  }
+];
+
+const ARCHETYPES = {
+  visual_deep: {
+    name: "SCHEMA BUILDER",
+    sub: "Hippocampal-dominant, spatial encoder",
+    desc: "Your brain excels at constructing rich mental models. You encode information via spatial and relational mapping. Strong episodic memory, benefits from concept maps, the Feynman technique, and elaborative interrogation.",
+    traits: { "Working Memory": 85, "Pattern Recognition": 92, "Sustained Focus": 78, "Cognitive Flexibility": 68, "Processing Speed": 72 },
+    neuro: { dopamine: 78, serotonin: 65, norepinephrine: 60, acetylcholine: 88 },
+    mode: "Elaborative Encoding"
+  },
+  verbal_analytical: {
+    name: "ANALYTICAL ENGINE",
+    sub: "Prefrontal-dominant, sequential processor",
+    desc: "Your cognition is built for rigorous logical analysis. Strong in verbal reasoning and deductive thinking. Thrives with structured notes, concept hierarchies, and deliberate practice. Watch for overthinking under stress (cortisol suppresses PFC).",
+    traits: { "Working Memory": 90, "Pattern Recognition": 75, "Sustained Focus": 88, "Cognitive Flexibility": 65, "Processing Speed": 80 },
+    neuro: { dopamine: 70, serotonin: 72, norepinephrine: 75, acetylcholine: 82 },
+    mode: "Retrieval Practice"
+  },
+  cycling_creative: {
+    name: "ULTRADIAN SURFER",
+    sub: "Default-mode network dominant",
+    desc: "Your cognition follows natural 90-minute ultradian rhythms. Exceptional creative insight during diffuse-mode thinking. Best results come from structured sprints (Pomodoro variants) followed by true mental rest to activate your DMN for consolidation.",
+    traits: { "Working Memory": 72, "Pattern Recognition": 88, "Sustained Focus": 62, "Cognitive Flexibility": 95, "Processing Speed": 78 },
+    neuro: { dopamine: 88, serotonin: 70, norepinephrine: 65, acetylcholine: 72 },
+    mode: "Interleaved Practice"
+  },
+  kinesthetic_active: {
+    name: "EMBODIED LEARNER",
+    sub: "Cerebellar + motor cortex integrated",
+    desc: "You learn through doing. Procedural memory pathways are your strength. Information encoded via action persists longer. Favor active recall, teach-back method, and physical study rituals. Movement activates BDNF, enhancing hippocampal neuroplasticity.",
+    traits: { "Working Memory": 75, "Pattern Recognition": 80, "Sustained Focus": 70, "Cognitive Flexibility": 85, "Processing Speed": 90 },
+    neuro: { dopamine: 82, serotonin: 78, norepinephrine: 85, acetylcholine: 70 },
+    mode: "Active Recall + Movement"
+  },
+  social_purpose: {
+    name: "MIRROR NEURON LEARNER",
+    sub: "Social cognition + oxytocin-regulated",
+    desc: "Your learning is amplified by social context. Mirror neuron systems and oxytocin pathways make you absorb information best through dialogue, teaching others, and collaborative sense-making. Isolation reduces your cognitive performance significantly.",
+    traits: { "Working Memory": 78, "Pattern Recognition": 82, "Sustained Focus": 65, "Cognitive Flexibility": 90, "Processing Speed": 75 },
+    neuro: { dopamine: 75, serotonin: 88, norepinephrine: 68, acetylcholine: 78 },
+    mode: "Collaborative Sense-Making"
+  }
+};
+
+const NEURO_META = {
+  dopamine: { color: "#00d4ff", label: "Motivation / Reward" },
+  serotonin: { color: "#00ff9d", label: "Stability / Mood" },
+  norepinephrine: { color: "#ffb347", label: "Alertness / Stress" },
+  acetylcholine: { color: "#b06aff", label: "Memory / Plasticity" }
+};
+
+const TRAIT_COLORS = {
+  "Working Memory": "#00d4ff",
+  "Pattern Recognition": "#b06aff",
+  "Sustained Focus": "#00ff9d",
+  "Cognitive Flexibility": "#ffb347",
+  "Processing Speed": "#ff4d6d"
+};
+
+const LEARNING_MODES = [
+  { name: "Focused Mode", sub: "Prefrontal cortex engaged — deliberate practice", color: "#00d4ff", badge: "SYSTEM 2" },
+  { name: "Diffuse Mode", sub: "Default network active — insight & consolidation", color: "#b06aff", badge: "DMN" },
+  { name: "Active Recall", sub: "Hippocampal retrieval strengthens engrams", color: "#00ff9d", badge: "SPACED" },
+  { name: "Sleep Encode", sub: "REM/NREM replay consolidates memories", color: "#ffb347", badge: "OFFLINE" }
+];
+
+const QUOTES = [
+  { q: "The brain is not designed for thinking; it's designed for survival. Learning requires deliberate override.", a: "D. Willingham, Why Don't Students Like School?" },
+  { q: "Memory is not the residue of experience — it is a reconstruction, shaped by emotion, context, and expectation.", a: "E. Loftus, Memory: Surprising New Insights" },
+  { q: "Effortful retrieval is the mechanism. The struggle to remember is not a failure — it is the learning.", a: "Roediger & Karpicke, The Power of Testing Memory" },
+  { q: "Sleep is not the enemy of performance. It is the biological substrate upon which memory consolidation occurs.", a: "M. Walker, Why We Sleep" },
+  { q: "Neuroplasticity doesn't reward passive repetition. It rewards prediction error — moments when reality violates expectation.", a: "M. Merzenich, Soft-Wired" }
+];
+
+// ── ONBOARDING ──
+let obStep = 0;
+let obAnswers = [];
+
+function renderOnboarding() {
+  const el = document.getElementById('onboardContent');
+  if (obStep < QUESTIONS.length) {
+    const q = QUESTIONS[obStep];
+    const dots = QUESTIONS.map((_,i) => `<div class="op-dot ${i < obStep ? 'done' : i === obStep ? 'active' : ''}"></div>`).join('');
+    el.innerHTML = `
+      <div class="onboard-header">
+        <div class="step-label">Cognitive Assessment — Question ${obStep+1} of ${QUESTIONS.length}</div>
+        <h2>${q.q}</h2>
+        <p>${q.sub}</p>
+      </div>
+      <div class="onboard-body">
+        <div class="onboard-progress">${dots}</div>
+        <div class="options-grid" id="optGrid">
+          ${q.opts.map((o,i) => `
+            <button class="option-btn" onclick="selectOption(${i}, this)">
+              <span class="opt-label">${o.label}</span>
+              ${o.text}
+            </button>`).join('')}
+        </div>
+        <button class="next-btn" id="nextBtn" disabled onclick="nextQuestion()">CONTINUE →</button>
+      </div>
+    `;
+  } else {
+    showResult();
+  }
+}
+
+let selectedOpt = null;
+
+function selectOption(i, btn) {
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedOpt = i;
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function nextQuestion() {
+  if (selectedOpt === null) return;
+  obAnswers.push(selectedOpt);
+  selectedOpt = null;
+  obStep++;
+  renderOnboarding();
+}
+
+function computeArchetype(answers) {
+  // Heuristic scoring based on answers
+  // Q0: learning style, Q1: chronotype, Q2: problem approach, Q3: attention, Q4: recovery, Q5: motivation
+  const style = ['visual', 'verbal', 'auditory', 'kinesthetic'][answers[0]];
+  const attention = ['deep', 'broad', 'cycling', 'social'][answers[3]];
+  const recovery = ['passive', 'active', 'creative', 'social'][answers[4]];
+  const motivation = ['future', 'present', 'mixed', 'purpose'][answers[5]];
+
+  if (style === 'visual' && attention === 'deep') return 'visual_deep';
+  if (style === 'verbal' && answers[2] === 0) return 'verbal_analytical';
+  if (attention === 'cycling' || recovery === 'creative') return 'cycling_creative';
+  if (style === 'kinesthetic' || recovery === 'active') return 'kinesthetic_active';
+  if (recovery === 'social' || motivation === 'purpose') return 'social_purpose';
+  return 'verbal_analytical'; // default
+}
+
+function showResult() {
+  const archetypeKey = computeArchetype(obAnswers);
+  const arch = ARCHETYPES[archetypeKey];
+  profile = { archetypeKey, arch, answers: obAnswers, createdAt: Date.now() };
+  localStorage.setItem('nb_profile', JSON.stringify(profile));
+
+  const el = document.getElementById('onboardContent');
+  const traitHtml = Object.entries(arch.traits).map(([k,v]) => `
+    <div class="result-trait">
+      <div class="rt-name">${k}</div>
+      <div class="rt-val">${v}/100</div>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div style="position:relative;overflow:hidden;">
+      <div class="scan-line"></div>
+      <div class="result-screen">
+        <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px;">PROFILE COMPUTED</div>
+        <div class="result-type">${arch.name}</div>
+        <div class="result-subtitle">${arch.sub}</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;margin-bottom:18px;text-align:left;font-weight:300;">${arch.desc}</div>
+        <div class="result-traits">${traitHtml}</div>
+        <button class="launch-btn" onclick="launchApp()">LAUNCH NEUROBUDDY →</button>
+      </div>
+    </div>
+  `;
+}
+
+function launchApp() {
+  document.getElementById('onboarding').style.display = 'none';
+  initApp();
+}
+
+// ── INIT APP ──
+function initApp() {
+  if (!profile) return;
+  const arch = profile.arch;
+  document.getElementById('profileVersion').textContent = 'v1.0';
+  document.getElementById('brainTypeName').textContent = arch.name;
+  document.getElementById('brainTypeSub').textContent = arch.sub;
+  document.getElementById('brainTypeDesc').textContent = arch.desc;
+
+  // TRAIT BARS
+  const tbc = document.getElementById('traitBars');
+  tbc.innerHTML = '';
+  Object.entries(arch.traits).forEach(([name, val]) => {
+    const color = TRAIT_COLORS[name] || '#00d4ff';
+    tbc.innerHTML += `
+      <div class="trait-bar-wrap">
+        <div class="trait-header">
+          <span class="trait-name">${name}</span>
+          <span class="trait-val">${val}</span>
+        </div>
+        <div class="trait-track">
+          <div class="trait-fill" style="width:0%;background:${color}" data-w="${val}"></div>
+        </div>
+      </div>`;
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.trait-fill').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  }, 100);
+
+  // NEURO CHIPS
+  const ngc = document.getElementById('neuroGrid');
+  ngc.innerHTML = '';
+  Object.entries(arch.neuro).forEach(([key, val]) => {
+    const meta = NEURO_META[key];
+    const cap = key.charAt(0).toUpperCase() + key.slice(1);
+    ngc.innerHTML += `
+      <div class="neuro-chip">
+        <div class="neuro-chip-name">${cap.toUpperCase()}</div>
+        <div class="neuro-chip-val" style="color:${meta.color}">${val}</div>
+        <div class="neuro-chip-label">${meta.label}</div>
+        <div class="neuro-mini-bar"><div class="neuro-mini-fill" style="width:0%;background:${meta.color}" data-w="${val}"></div></div>
+      </div>`;
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.neuro-mini-fill').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  }, 200);
+
+  // LEARNING MODES
+  const lmc = document.getElementById('learningModes');
+  lmc.innerHTML = '';
+  LEARNING_MODES.forEach((m, i) => {
+    lmc.innerHTML += `
+      <div class="lmode ${i===0?'active':''}" onclick="selectMode(this, '${m.name}')">
+        <div class="lmode-dot" style="background:${m.color};color:${m.color}"></div>
+        <div class="lmode-info">
+          <div class="lmode-name">${m.name}</div>
+          <div class="lmode-sub">${m.sub}</div>
+        </div>
+        <span class="lmode-badge">${m.badge}</span>
+      </div>`;
+  });
+
+  // HEADER STATS
+  document.getElementById('focusScore').textContent = arch.traits['Sustained Focus'] + '/100';
+  document.getElementById('studyModeLabel').textContent = arch.mode;
+  const load = Math.round(arch.traits['Working Memory'] * 0.65);
+  document.getElementById('loadLabel').textContent = load < 50 ? 'OPTIMAL' : load < 75 ? 'MODERATE' : 'HIGH';
+  document.getElementById('retentionLabel').textContent = '~' + (55 + Math.round(arch.traits['Pattern Recognition'] * 0.3)) + '%';
+
+  // COGNITIVE LOAD
+  document.getElementById('loadPct').textContent = load + '%';
+  document.getElementById('loadFill').style.width = load + '%';
+
+  // STUDY WINDOWS
+  const chronotype = profile.answers[1];
+  const windows = getStudyWindows(chronotype);
+  const swc = document.getElementById('studyWindows');
+  swc.innerHTML = '';
+  windows.forEach(w => {
+    swc.innerHTML += `
+      <div class="window-slot">
+        <span class="wslot-time">${w.time}</span>
+        <div class="wslot-info">
+          <div class="wslot-subject">${w.subject}</div>
+          <div class="wslot-type">${w.type}</div>
+          <div class="wslot-bar" style="background:${w.color};width:${w.pct}%"></div>
+        </div>
+      </div>`;
+  });
+
+  // CORTISOL ALERT
+  const alert = getCortisolAlert(chronotype);
+  document.getElementById('cortisolAlert').innerHTML = `<span class="alert-icon">⚠</span><div>${alert}</div>`;
+
+  // INSIGHT
+  const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+  document.getElementById('insightQuote').textContent = '"' + q.q + '"';
+  document.querySelector('.insight-author').textContent = '— ' + q.a;
+
+  // TASKS
+  renderTasks();
+
+  // Welcome message
+  if (apiKey) document.getElementById('apiNotice').style.display = 'none';
+  sendWelcome();
+
+  // session timer
+  setInterval(updateTimer, 1000);
+}
+
+function getStudyWindows(chronotype) {
+  const tables = [
+    [ // early bird
+      { time: "6:00 AM", subject: "Deep Work Block", type: "Peak cortisol — analytic tasks", color: "#00d4ff", pct: 95 },
+      { time: "9:30 AM", subject: "Review + Spaced Recall", type: "Memory consolidation window", color: "#00ff9d", pct: 80 },
+      { time: "1:00 PM", subject: "Light Reading / Notes", type: "Post-lunch dip — passive input", color: "#ffb347", pct: 55 },
+      { time: "4:00 PM", subject: "Creative Problem Solving", type: "Second wind — flexible cognition", color: "#b06aff", pct: 70 }
+    ],
+    [ // midday
+      { time: "9:00 AM", subject: "Warm-Up + Review", type: "Cortisol rising — prep tasks", color: "#ffb347", pct: 65 },
+      { time: "10:30 AM", subject: "Deep Focus Block", type: "Peak cognitive window", color: "#00d4ff", pct: 95 },
+      { time: "2:00 PM", subject: "Practice Problems", type: "Active recall + application", color: "#00ff9d", pct: 82 },
+      { time: "5:00 PM", subject: "Consolidation + Review", type: "Encoding before evening rest", color: "#b06aff", pct: 68 }
+    ],
+    [ // afternoon
+      { time: "10:00 AM", subject: "Light Input", type: "Low cortisol — reading only", color: "#ffb347", pct: 50 },
+      { time: "2:00 PM", subject: "Deep Focus Block", type: "Peak — analytic & creative", color: "#00d4ff", pct: 95 },
+      { time: "4:30 PM", subject: "Active Recall Sprint", type: "Sustained peak window", color: "#00ff9d", pct: 88 },
+      { time: "7:00 PM", subject: "Elaborative Review", type: "Consolidation before sleep", color: "#b06aff", pct: 72 }
+    ],
+    [ // night owl
+      { time: "11:00 AM", subject: "Gentle Warm-Up", type: "Cortisol still low — easy tasks", color: "#ffb347", pct: 45 },
+      { time: "3:00 PM", subject: "Active Study Block", type: "Cortisol peak arrives late", color: "#00d4ff", pct: 80 },
+      { time: "8:00 PM", subject: "Deep Focus Block", type: "Your cognitive prime time", color: "#00ff9d", pct: 95 },
+      { time: "10:30 PM", subject: "Review + Recall", type: "Pre-sleep encoding window", color: "#b06aff", pct: 85 }
+    ]
+  ];
+  return tables[chronotype] || tables[1];
+}
+
+function getCortisolAlert(chronotype) {
+  const alerts = [
+    "Early bird: Your cortisol peaks at 7–8 AM. Avoid caffeine until after 9 AM to prevent adrenal habituation. Study your hardest material before 10 AM.",
+    "Midday type: Cortisol peaks 9–11 AM. Use this window for demanding cognitive tasks. Expect a 20–30 min post-lunch dip around 1–2 PM — schedule breaks here.",
+    "Afternoon type: Cortisol peak arrives 1–3 PM. Avoid scheduling deep work before noon. Your second ultradian cycle peaks around 4–5 PM — guard this time.",
+    "Night owl: Cortisol rhythm is phase-delayed. Peak arrives around 9–11 PM. Your sleep drive conflicts with your social schedule — prioritize consistent sleep onset."
+  ];
+  return alerts[chronotype] || alerts[1];
+}
+
+function selectMode(el, name) {
+  document.querySelectorAll('.lmode').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('studyModeLabel').textContent = name;
+}
+
+// ── CHAT ──
+function sendWelcome() {
+  const arch = profile.arch;
+  const chronoLabels = ['early bird (peak: 6–10 AM)', 'midday type (peak: 10 AM–2 PM)', 'afternoon type (peak: 2–6 PM)', 'night owl (peak: 8–11 PM)'];
+  const chrono = chronoLabels[profile.answers[1]] || 'midday type';
+  const html = `
+    <strong>Profile loaded: ${arch.name}</strong> — <em>${arch.sub}</em><br><br>
+    Based on your assessment, I've calibrated my interaction style to your cognitive profile. Here's what that means:<br><br>
+    <ul>
+      <li>Your <span class="sci-tag">working memory</span> score (${arch.traits['Working Memory']}/100) means I'll ${arch.traits['Working Memory'] > 80 ? 'present complex information in full' : 'chunk information into digestible segments'}.</li>
+      <li>Your chronotype is <span class="sci-tag">${chrono}</span> — I'll suggest <strong>task types</strong> aligned to your cortisol and alertness rhythm.</li>
+      <li>Your dominant learning mode is <span class="green-tag">${arch.mode}</span>, which I'll use to frame all explanations and exercises.</li>
+      <li>Neurotransmitter profile suggests ${arch.neuro.dopamine > 80 ? 'high dopamine baseline — novelty and variety will maintain your engagement' : 'moderate dopamine — consistent routines with clear rewards work best for you'}.</li>
+    </ul><br>
+    What would you like to work on? I'll adapt every response to your <strong>${arch.name}</strong> cognitive architecture.
+    <span class="ref">Refs: Arnsten (2011), Folkard (1975), Baddeley (2003), Schultz (1997)</span>`;
+  appendBotMsg(html, 'NEUROBUDDY');
+}
+
+function appendBotMsg(html, sender = 'NEUROBUDDY') {
+  const box = document.getElementById('chatMessages');
+  const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'msg-row';
+  div.innerHTML = `
+    <div class="msg-avatar ai">AI</div>
+    <div class="msg-content">
+      <div class="msg-meta">
+        <span class="msg-name">${sender}</span>
+        <span class="msg-tag">${now}</span>
+        ${profile ? `<span class="msg-tag">${profile.arch.name}</span>` : ''}
+      </div>
+      <div class="bubble ai-b">${html}</div>
+    </div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function appendUserMsg(text) {
+  const box = document.getElementById('chatMessages');
+  const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'msg-row user';
+  div.innerHTML = `
+    <div class="msg-avatar human">YOU</div>
+    <div class="msg-content">
+      <div class="msg-meta">
+        <span class="msg-name">STUDENT</span>
+        <span class="msg-tag">${now}</span>
+      </div>
+      <div class="bubble user-b">${escHtml(text)}</div>
+    </div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function sendMessage() {
+  const inp = document.getElementById('userInput');
+  const text = inp.value.trim();
+  if (!text || isLoading) return;
+  inp.value = ''; inp.style.height = 'auto';
+  document.getElementById('queryChips').style.display = 'none';
+  appendUserMsg(text);
+  chatHistory.push({ role: 'user', content: text });
+  await callClaude(text);
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function chipSend(t) {
+  document.getElementById('userInput').value = t;
+  sendMessage();
+}
+
+async function callClaude(userText) {
+  if (!apiKey) {
+    appendBotMsg('⚠ <strong>API key required.</strong> Enter your Anthropic API key in the yellow banner above.', 'SYSTEM');
+    return;
+  }
+  isLoading = true;
+
+  // Typing indicator
+  const box = document.getElementById('chatMessages');
+  const typingRow = document.createElement('div');
+  typingRow.className = 'msg-row';
+  typingRow.id = 'typingRow';
+  typingRow.innerHTML = `
+    <div class="msg-avatar ai">AI</div>
+    <div class="msg-content">
+      <div class="bubble ai-b"><div class="typing-indicator"><div class="ti"></div><div class="ti"></div><div class="ti"></div></div></div>
+    </div>`;
+  box.appendChild(typingRow);
+  box.scrollTop = box.scrollHeight;
+
+  const arch = profile ? profile.arch : null;
+  const systemPrompt = `You are NeuroBuddy, a scientifically-grounded AI study assistant specialized in neuroscience, cognitive psychology, and behavioral learning science.
+
+STUDENT'S COGNITIVE PROFILE:
+${arch ? `
+- Brain Archetype: ${arch.name} (${arch.sub})
+- Cognitive Description: ${arch.desc}
+- Working Memory Score: ${arch.traits['Working Memory']}/100
+- Sustained Focus: ${arch.traits['Sustained Focus']}/100
+- Cognitive Flexibility: ${arch.traits['Cognitive Flexibility']}/100
+- Learning Mode: ${arch.mode}
+- Neurotransmitter Profile: Dopamine ${arch.neuro.dopamine}, Serotonin ${arch.neuro.serotonin}, Norepinephrine ${arch.neuro.norepinephrine}, Acetylcholine ${arch.neuro.acetylcholine}
+- Chronotype Index: ${['Early Bird (6-10 AM peak)', 'Midday (10 AM-2 PM peak)', 'Afternoon (2-6 PM peak)', 'Night Owl (8 PM+ peak)'][profile.answers[1]]}
+` : 'No profile yet.'}
+
+COMMUNICATION STYLE:
+- Speak with scientific precision — cite researchers, mechanisms, and studies by name where relevant (e.g., Ebbinghaus forgetting curve, Tulving's episodic memory, Kahneman System 1/2)
+- Adapt explanations to this student's specific cognitive profile
+- Use neuroscience and behavioral science terminology naturally but explain terms briefly
+- When suggesting study techniques, explain the underlying neurological mechanism
+- Be direct, evidence-based, and avoid vague motivational platitudes
+- Structure responses clearly — use bold for key terms, bullet points for lists
+- Include brief research citations at the end when making empirical claims (format: "Ref: Author, Year")
+- You are thoughtful, scientific, and genuinely helpful — not a cheerleader, but a rigorous cognitive coach`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: chatHistory.slice(-12)
+      })
+    });
+
+    document.getElementById('typingRow')?.remove();
+
+    const data = await resp.json();
+    if (data.error) { appendBotMsg(`<strong>API Error:</strong> ${escHtml(data.error.message)}`, 'ERROR'); isLoading = false; return; }
+
+    const reply = data.content[0].text;
+    chatHistory.push({ role: 'assistant', content: reply });
+
+    const formatted = reply
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<span class="sci-tag">$1</span>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+      .replace(/\n\n/g, '<br><br>')
+      .replace(/\n/g, '<br>');
+
+    appendBotMsg(formatted);
+
+  } catch(e) {
+    document.getElementById('typingRow')?.remove();
+    appendBotMsg(`<strong>Connection error:</strong> ${escHtml(e.message)}. Check your API key and network.`, 'ERROR');
+  }
+  isLoading = false;
+}
+
+// ── TASKS ──
+function renderTasks() {
+  const list = document.getElementById('taskList');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!tasks.length) {
+    list.innerHTML = `<div style="color:var(--text-dim);font-size:0.75rem;padding:8px 0;">No tasks yet.</div>`;
+    return;
+  }
+  const colors = ['#00d4ff','#b06aff','#00ff9d','#ffb347','#ff4d6d'];
+  tasks.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'task-row';
+    div.innerHTML = `
+      <div class="task-check ${t.done?'done':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
+      <span class="task-text ${t.done?'done':''}">${escHtml(t.text)}</span>
+      <div class="task-pri" style="background:${colors[t.id%5]}"></div>`;
+    list.appendChild(div);
+  });
+}
+
+function toggleTask(id) {
+  const t = tasks.find(x => x.id === id);
+  if (t) { t.done = !t.done; saveTasks(); renderTasks(); }
+}
+
+function addTask() {
+  const inp = document.getElementById('taskInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  tasks.push({ id: Date.now(), text, done: false });
+  saveTasks(); renderTasks();
+  inp.value = '';
+}
+
+function saveTasks() { localStorage.setItem('nb_tasks', JSON.stringify(tasks)); }
+
+// ── MISC ──
+function saveApiKey() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if (k.startsWith('sk-')) {
+    apiKey = k;
+    localStorage.setItem('nb_api_key', k);
+    document.getElementById('apiNotice').style.display = 'none';
+  } else alert('Invalid API key format.');
+}
+
+function setView(v) {
+  document.querySelectorAll('.ntab').forEach((t,i) => t.classList.toggle('active', ['learn','tasks','profile'][i]===v));
+}
+
+function toggleFocusMode() {
+  focusMode = !focusMode;
+  document.querySelector('.topbar').style.display = focusMode ? 'none' : '';
+  document.querySelector('.panel').style.display = focusMode ? 'none' : '';
+  document.querySelector('.panel:last-child').style.display = focusMode ? 'none' : '';
+}
+
+function updateTimer() {
+  const s = Math.floor((Date.now()-sessionStart)/1000);
+  const h = String(Math.floor(s/3600)).padStart(2,'0');
+  const m = String(Math.floor((s%3600)/60)).padStart(2,'0');
+  const sec = String(s%60).padStart(2,'0');
+  const el = document.getElementById('sessionTimer');
+  if (el) el.textContent = `${h}:${m}:${sec}`;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight,120)+'px';
+}
+
+// ── START ──
+if (profile) {
+  document.getElementById('onboarding').style.display = 'none';
+  initApp();
+} else {
+  renderOnboarding();
+}
+</script>
+</body>
+</html>
