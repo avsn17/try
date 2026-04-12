@@ -1301,10 +1301,10 @@ body::before {
         <div class="api-notice" id="apiNotice">
           <span>⚠</span>
           <div>
-            <div style="font-family:var(--font-mono);font-size:0.7rem;margin-bottom:2px;color:var(--amber);">ANTHROPIC API KEY REQUIRED</div>
-            <div>Enter your API key to activate the AI engine.</div>
+            <div style="font-family:var(--font-mono);font-size:0.7rem;margin-bottom:2px;color:var(--amber);">VERCEL AI GATEWAY KEY REQUIRED</div>
+            <div>Enter your <strong>Vercel AI Gateway</strong> key — free at <a href="https://vercel.com/ai-gateway" target="_blank" style="color:var(--amber);text-decoration:underline;">vercel.com/ai-gateway</a></div>
             <div class="api-key-row">
-              <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" />
+              <input type="password" id="apiKeyInput" placeholder="Vercel AI Gateway key…" />
               <button onclick="saveApiKey()">SAVE</button>
             </div>
           </div>
@@ -1431,7 +1431,7 @@ body::before {
 })();
 
 // ── STATE ──
-let apiKey = localStorage.getItem('nb_api_key') || '';
+let apiKey = localStorage.getItem('nb_vercel_key') || '';
 let profile = JSON.parse(localStorage.getItem('nb_profile') || 'null');
 let chatHistory = [];
 let tasks = JSON.parse(localStorage.getItem('nb_tasks') || '[]');
@@ -1916,7 +1916,7 @@ function chipSend(t) {
 
 async function callClaude(userText) {
   if (!apiKey) {
-    appendBotMsg('⚠ <strong>API key required.</strong> Enter your Anthropic API key in the yellow banner above.', 'SYSTEM');
+    appendBotMsg('⚠ <strong>Vercel AI Gateway key required.</strong> Enter your key in the yellow banner above. Get one free at vercel.com/ai-gateway.', 'SYSTEM');
     return;
   }
   isLoading = true;
@@ -1960,28 +1960,32 @@ COMMUNICATION STYLE:
 - You are thoughtful, scientific, and genuinely helpful — not a cheerleader, but a rigorous cognitive coach`;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    // Build messages array with system prompt as first user message (OpenAI-compatible format)
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...chatHistory.slice(-12)
+    ];
+
+    const resp = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'anthropic/claude-sonnet-4-6',
         max_tokens: 1000,
-        system: systemPrompt,
-        messages: chatHistory.slice(-12)
+        messages
       })
     });
 
     document.getElementById('typingRow')?.remove();
 
     const data = await resp.json();
-    if (data.error) { appendBotMsg(`<strong>API Error:</strong> ${escHtml(data.error.message)}`, 'ERROR'); isLoading = false; return; }
+    if (data.error) { appendBotMsg(`<strong>API Error:</strong> ${escHtml(data.error.message || JSON.stringify(data.error))}`, 'ERROR'); isLoading = false; return; }
 
-    const reply = data.content[0].text;
+    const reply = data.choices?.[0]?.message?.content || '';
+    if (!reply) { appendBotMsg('<strong>Empty response.</strong> Check your Vercel AI Gateway key and model access.', 'ERROR'); isLoading = false; return; }
     chatHistory.push({ role: 'assistant', content: reply });
 
     const formatted = reply
@@ -1997,7 +2001,7 @@ COMMUNICATION STYLE:
 
   } catch(e) {
     document.getElementById('typingRow')?.remove();
-    appendBotMsg(`<strong>Connection error:</strong> ${escHtml(e.message)}. Check your API key and network.`, 'ERROR');
+    appendBotMsg(`<strong>Connection error:</strong> ${escHtml(e.message)}. Check your Vercel AI Gateway key and network.`, 'ERROR');
   }
   isLoading = false;
 }
@@ -2042,11 +2046,12 @@ function saveTasks() { localStorage.setItem('nb_tasks', JSON.stringify(tasks)); 
 // ── MISC ──
 function saveApiKey() {
   const k = document.getElementById('apiKeyInput').value.trim();
-  if (k.startsWith('sk-')) {
+  if (k.length > 10) {
     apiKey = k;
-    localStorage.setItem('nb_api_key', k);
+    localStorage.setItem('nb_vercel_key', k);
     document.getElementById('apiNotice').style.display = 'none';
-  } else alert('Invalid API key format.');
+    appendBotMsg('🔑 <strong>Vercel AI Gateway key saved.</strong> AI engine is now active.', 'SYSTEM');
+  } else alert('Please enter a valid Vercel AI Gateway key.');
 }
 
 function setView(v) {
