@@ -1,12 +1,5 @@
 {
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/neuro_study_bot_vercel.html"
-    }
+    { "source": "/api/(.*)", "destination": "/api/$1" }
   ]
 }
